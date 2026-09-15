@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Barista Flight Roster | 星巴克夥伴排班日誌</title>
+  <style>
+    :root {
+      --sbux-green: #006241;
+      --sbux-green-deep: #00462e;
+      --sbux-green-light: #e8f5e9;
+      --sbux-cream: #fbf7f2;
+      --sbux-card: #ffffff;
+      --sbux-caramel: #cba258;
+      --sbux-border: #ede4dc;
+      --sbux-text: #2d2926;
+      --sbux-muted: #8c827a;
+      --holiday-red: #dc2626;
+      --holiday-bg: #fef2f2;
+      --holiday-border: #fca5a5;
+      --sidebar-width: 220px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    }
+
+    body {
+      background-color: var(--sbux-cream);
+      color: var(--sbux-text);
+      display: flex;
+      min-height: 100vh;
+      background-image: radial-gradient(#e5dbce 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    /* ===== 最左側全高側邊導航欄 ===== */
+    .app-sidebar {
+      width: var(--sidebar-width);
+      background: var(--sbux-card);
+      border-right: 1.5px solid var(--sbux-border);
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      box-shadow: 2px 0 12px rgba(0, 0, 0, 0.03);
+      z-index: 100;
+    }
+
+    .sidebar-top {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--sbux-border);
+    }
+
+    .sidebar-brand img {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--sbux-border);
+    }
+
+    .sidebar-brand-text h2 {
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: var(--sbux-green-deep);
+      line-height: 1.2;
+    }
+
+    .sidebar-brand-text span {
+      font-size: 0.72rem;
+      color: var(--sbux-caramel);
+      font-weight: 700;
+    }
+
+    .nav-group-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--sbux-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      padding-left: 6px;
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      list-style: none;
+    }
+
+    .side-nav-btn {
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 12px 14px;
+      border-radius: 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--sbux-muted);
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-align: left;
+    }
+
+    .side-nav-btn:hover {
+      background: var(--sbux-cream);
+      color: var(--sbux-text);
+    }
+
+    .side-nav-btn.active {
+      background: var(--sbux-green);
+      color: white;
+      box-shadow: 0 4px 12px rgba(0, 98, 65, 0.22);
+    }
+
+    .sidebar-bottom {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-top: 1px solid var(--sbux-border);
+      padding-top: 16px;
+    }
+
+    .auto-save-hint {
+      font-size: 0.72rem;
+      color: var(--sbux-green);
+      font-weight: 700;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .side-tool-btn {
+      width: 100%;
+      background: #faf6f1;
+      border: 1px solid var(--sbux-border);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--sbux-muted);
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .side-tool-btn:hover {
+      background: var(--sbux-green-light);
+      color: var(--sbux-green-deep);
+      border-color: var(--sbux-green);
+    }
+
+    /* ===== 右側主內容容器 ===== */
+    .app-main-content {
+      margin-left: var(--sidebar-width);
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .roster-app {
+      width: 100%;
+      max-width: 980px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* 頂部 Header */
+    header {
+      background: linear-gradient(135deg, #00462e, #006241);
+      color: white;
+      border-radius: 24px;
+      padding: 20px 26px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0, 70, 46, 0.16);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      z-index: 2;
+    }
+
+    .header-titles h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .badge-bear {
+      background: #ffd875;
+      color: #3e2808;
+      font-size: 0.75rem;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    .header-titles p {
+      font-size: 0.85rem;
+      color: #d4e9e2;
+      margin-top: 4px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      z-index: 2;
+    }
+
+    .user-profile-badge {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      padding: 6px 14px 6px 8px;
+      border-radius: 30px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .avatar-circle {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: #ffd875;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      border: 2px solid white;
+    }
+
+    .user-details {
+      display: flex;
+      flex-direction: column;
+      text-align: left;
+    }
+
+    .user-details .user-name {
+      font-size: 0.95rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .user-details .user-role {
+      font-size: 0.68rem;
+      color: #ffd875;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .bearista-svg {
+      width: 65px;
+      height: 70px;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+      animation: gentle-bob 3s ease-in-out infinite;
+    }
+
+    @keyframes gentle-bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* 薪資週期月份切換列 */
+    .filter-bar {
+      background: var(--sbux-card);
+      border: 1.5px solid var(--sbux-border);
+      border-radius: 18px;
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      box-shadow: 0 2px 10px rgba(140, 130, 122, 0.06);
+    }
+
+    .month-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      color: var(--sbux-green-deep);
+      font-size: 0.9rem;
+    }
+
+    .month-selector input {
+      padding: 6px 12px;
+      border-radius: 12px;
+      border: 1.5px solid var(--sbux-border);
+      font-size: 0.9rem;
+      background: #faf6f1;
+      font-weight: 600;
+      color: var(--sbux-green-deep);
+    }
+
+    .period-cycle-tag {
+      background: var(--sbux-green-light);
+      color: var(--sbux-green-deep);
+      padding: 5px 12px;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: 1px solid #bbf7d0;
+    }
+
+    /* 工時 HUD 卡片 */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+    }
+
+    .kpi-card {
+      background: var(--sbux-card);
+      border: 1.5px solid var(--sbux-border);
+      border-radius: 18px;
+      padding: 18px 20px;
+      box-shadow: 0 4px 12px rgba(140, 130, 122, 0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .kpi-label {
+      font-size: 0.8rem;
+      color: var(--sbux-muted);
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .kpi-num {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--sbux-green-deep);
+      margin-top: 4px;
+      font-feature-settings: "tnum";
+    }
+
+    .kpi-num small {
+      font-size: 0.85rem;
+      color: var(--sbux-muted);
+      font-weight: 600;
+      margin-left: 4px;
+    }
+
+    .holiday-stat {
+      color: var(--holiday-red);
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-top: 4px;
+    }
+
+    /* 登錄與編輯表單 */
+    .input-panel {
+      background: var(--sbux-card);
+      border: 1.5px solid var(--sbux-border);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 4px 12px rgba(140, 130, 122, 0.05);
+      transition: all 0.3s ease;
+    }
+
+    .input-panel.editing-mode {
+      border-color: var(--sbux-caramel);
+      background: #fffdf9;
+    }
+
+    .panel-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--sbux-green-deep);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .edit-indicator {
+      display: none;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid #fde68a;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) auto;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .form-item {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-item label {
+      font-size: 0.75rem;
+      color: var(--sbux-muted);
+      font-weight: 700;
+    }
+
+    input[type="text"], input[type="date"], input[type="number"], select {
+      background: #faf6f1;
+      border: 1.5px solid var(--sbux-border);
+      color: var(--sbux-text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    select {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--sbux-green-deep);
+    }
+
+    input:focus, select:focus {
+      background: #fff;
+      border-color: var(--sbux-green);
+      box-shadow: 0 0 0 3px rgba(0, 98, 65, 0.12);
+    }
+
+    .holiday-checkbox-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 42px;
+      background: #fff5f5;
+      border: 1.5px solid #fed7d7;
+      padding: 0 12px;
+      border-radius: 12px;
+      cursor: pointer;
+    }
+
+    .holiday-checkbox-box input {
+      accent-color: var(--holiday-red);
+      cursor: pointer;
+      width: 16px;
+      height: 16px;
+    }
+
+    .holiday-checkbox-box label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--holiday-red);
+      cursor: pointer;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-submit {
+      background: var(--sbux-green);
+      color: white;
+      font-weight: 800;
+      border: none;
+      padding: 0 20px;
+      height: 42px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-submit:hover {
+      background: var(--sbux-green-deep);
+    }
+
+    .btn-cancel-edit {
+      display: none;
+      background: #e5e7eb;
+      color: #4b5563;
+      font-weight: 700;
+      border: none;
+      padding: 0 14px;
+      height: 42px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .btn-cancel-edit:hover {
+      background: #d1d5db;
+    }
+
+    /* 1. 清單模式 */
+    .roster-sheet {
+      background: var(--sbux-card);
+      border: 1.5px solid var(--sbux-border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(140, 130, 122, 0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: #f7efe7;
+      color: var(--sbux-muted);
+      font-size: 0.75rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      padding: 14px 18px;
+      border-bottom: 1.5px solid var(--sbux-border);
+    }
+
+    td {
+      padding: 14px 18px;
+      border-bottom: 1px solid #f5ede6;
+      font-size: 0.9rem;
+      vertical-align: middle;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge-position {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--sbux-green-light);
+      color: var(--sbux-green-deep);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+    }
+
+    .badge-holiday {
+      background: var(--holiday-bg);
+      color: var(--holiday-red);
+      border: 1px solid var(--holiday-border);
+      font-size: 0.7rem;
+      padding: 2px 7px;
+      border-radius: 10px;
+      font-weight: 800;
+      margin-left: 6px;
+      display: inline-block;
+    }
+
+    .store-tag {
+      font-weight: 600;
+      color: var(--sbux-green-deep);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .actions-cell {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .btn-edit, .btn-del {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 0.88rem;
+      border-radius: 8px;
+      padding: 5px 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-edit {
+      color: var(--sbux-caramel);
+      margin-right: 4px;
+    }
+
+    .btn-edit:hover {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .btn-del {
+      color: #cfc6be;
+    }
+
+    .btn-del:hover {
+      color: #ef4444;
+      background: #fee2e2;
+    }
+
+    .empty-state {
+      padding: 45px 20px;
+      text-align: center;
+      color: var(--sbux-muted);
+      font-size: 0.9rem;
+    }
+
+    /* 2. 日曆月曆模式 */
+    .calendar-container {
+      background: var(--sbux-card);
+      border: 1.5px solid var(--sbux-border);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 4px 12px rgba(140, 130, 122, 0.05);
+      display: none;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      text-align: center;
+      font-weight: 800;
+      font-size: 0.8rem;
+      color: var(--sbux-muted);
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid var(--sbux-border);
+      margin-bottom: 8px;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 8px;
+    }
+
+    .calendar-cell {
+      min-height: 110px;
+      background: #faf6f1;
+      border: 1px solid var(--sbux-border);
+      border-radius: 12px;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .calendar-cell.has-duty {
+      background: #ffffff;
+      border-color: #bbf7d0;
+      box-shadow: 0 2px 8px rgba(0, 98, 65, 0.04);
+    }
+
+    .calendar-cell.is-holiday-cell {
+      background: #fffafa;
+      border-color: #fecaca;
+    }
+
+    .calendar-cell.is-today {
+      border: 2px solid var(--sbux-caramel);
+    }
+
+    .calendar-cell.other-month {
+      opacity: 0.35;
+      background: #f3eee8;
+    }
+
+    .cell-date-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cell-date {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--sbux-text);
+    }
+
+    .cell-date.holiday-text {
+      color: var(--holiday-red);
+    }
+
+    .holiday-name-tag {
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--holiday-red);
+    }
+
+    .duty-badge-cal {
+      background: var(--sbux-green-light);
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 4px 6px;
+      font-size: 0.72rem;
+      color: var(--sbux-green-deep);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: transform 0.1s, box-shadow 0.2s;
+    }
+
+    .duty-badge-cal.is-double {
+      background: #fff1f2;
+      border-color: #fecdd3;
+      color: #9f1239;
+    }
+
+    .duty-badge-cal:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0, 70, 46, 0.12);
+    }
+
+    .duty-badge-cal .pos-text {
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .duty-badge-cal .store-text {
+      font-size: 0.65rem;
+      color: var(--sbux-green-deep);
+      font-weight: 700;
+    }
+
+    .duty-badge-cal .time-text {
+      font-size: 0.65rem;
+      color: var(--sbux-muted);
+    }
+
+    /* 防呆確認彈窗 */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(3px);
+    }
+
+    .modal-box {
+      background: white;
+      border-radius: 22px;
+      width: 90%;
+      max-width: 420px;
+      padding: 24px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      animation: popIn 0.2s ease-out;
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-icon {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--sbux-green-deep);
+      margin-bottom: 8px;
+    }
+
+    .modal-msg {
+      font-size: 0.9rem;
+      color: var(--sbux-muted);
+      line-height: 1.5;
+      margin-bottom: 18px;
+      text-align: left;
+      background: var(--sbux-cream);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--sbux-border);
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-modal {
+      flex: 1;
+      height: 42px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-modal-cancel {
+      background: #f3f4f6;
+      color: #4b5563;
+    }
+
+    .btn-modal-cancel:hover { background: #e5e7eb; }
+
+    .btn-modal-confirm {
+      background: var(--sbux-green);
+      color: white;
+    }
+
+    .btn-modal-confirm.danger {
+      background: #ef4444;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+      .app-sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        border-right: none;
+        border-bottom: 1.5px solid var(--sbux-border);
+        padding: 16px;
+      }
+      .app-main-content {
+        margin-left: 0;
+        padding: 16px 10px;
+      }
+      .nav-list {
+        flex-direction: row;
+      }
+      .sidebar-bottom {
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+      .side-tool-btn {
+        flex: 1;
+      }
+      .header-titles h1 {
+        font-size: 1.15rem;
+      }
+      .user-profile-badge {
+        padding: 4px 10px 4px 6px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== 1. 最左側全高側邊導航欄 ===== -->
+  <aside class="app-sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-brand">
+        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/500px-Starbucks_Corporation_Logo_2011.svg.png" alt="Logo">
+        <div class="sidebar-brand-text">
+          <h2>STARBUCKS</h2>
+          <span>BARISTA LOG</span>
+        </div>
+      </div>
+
+      <nav>
+        <div class="nav-group-title">視圖模式 (VIEW)</div>
+        <ul class="nav-list">
+          <li>
+            <button class="side-nav-btn active" id="tabList" onclick="switchView('list')">
+              <span>📋</span> 清單模式 (List)
+            </button>
+          </li>
+          <li>
+            <button class="side-nav-btn" id="tabCalendar" onclick="switchView('calendar')">
+              <span>📅</span> 日曆班表 (Cal)
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="auto-save-hint">
+        <span>●</span> 自動儲存已啟用
+      </div>
+      <button class="side-tool-btn" onclick="exportData()">📥 下載備份 (JSON)</button>
+      <button class="side-tool-btn" onclick="document.getElementById('importFile').click()">📤 還原紀錄</button>
+      <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(event)">
+    </div>
+  </aside>
+
+  <!-- ===== 2. 右側主要內容區塊 ===== -->
+  <div class="app-main-content">
+    <div class="roster-app">
+      
+      <!-- 頂部 Header：右上角頭像 Runy -->
+      <header>
+        <div class="header-left">
+          <div class="header-titles">
+            <h1>BARISTA ROSTER <span class="badge-bear">BEARISTA</span></h1>
+            <p>星巴克綠圍裙夥伴執勤手帳與工時日誌</p>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="user-profile-badge">
+            <div class="avatar-circle">☕</div>
+            <div class="user-details">
+              <span class="user-name">Runy</span>
+              <span class="user-role">BARISTA PARTNER</span>
+            </div>
+          </div>
+
+          <svg class="bearista-svg" viewBox="0 0 120 130" fill="none">
+            <circle cx="34" cy="32" r="16" fill="#8d5b4c"/><circle cx="34" cy="32" r="9" fill="#f3b5a1"/>
+            <circle cx="86" cy="32" r="16" fill="#8d5b4c"/><circle cx="86" cy="32" r="9" fill="#f3b5a1"/>
+            <ellipse cx="60" cy="55" rx="36" ry="32" fill="#8d5b4c"/>
+            <circle cx="48" cy="52" r="4.5" fill="#2b1a15"/><circle cx="46.5" cy="50.5" r="1.5" fill="#fff"/>
+            <circle cx="72" cy="52" r="4.5" fill="#2b1a15"/><circle cx="70.5" cy="50.5" r="1.5" fill="#fff"/>
+            <ellipse cx="60" cy="62" rx="14" ry="10" fill="#eed5ca"/><ellipse cx="60" cy="58" rx="5" ry="3.5" fill="#2b1a15"/>
+            <path d="M60 61.5 V 65" stroke="#2b1a15" stroke-width="2" stroke-linecap="round"/>
+            <path d="M56 65 Q60 68 64 65" stroke="#2b1a15" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+            <ellipse cx="38" cy="61" rx="5" ry="3" fill="#f9a8a8" opacity="0.7"/>
+            <ellipse cx="82" cy="61" rx="5" ry="3" fill="#f9a8a8" opacity="0.7"/>
+            <path d="M32 84 C32 84, 40 76, 60 76 C80 76, 88 84, 88 84 L96 130 H24 Z" fill="#00754a"/>
+            <path d="M46 76 L40 102" stroke="#00462e" stroke-width="3"/>
+            <path d="M74 76 L80 102" stroke="#00462e" stroke-width="3"/>
+            <circle cx="60" cy="94" r="6.5" fill="#fff"/><circle cx="60" cy="94" r="5" fill="#00754a"/>
+            <polygon points="60,90 61.2,93.5 64.8,93.5 61.8,95.5 63,99 60,97 57,99 58.2,95.5 55.2,93.5 58.8,93.5" fill="#fff"/>
+            <rect x="74" y="98" width="16" height="22" rx="3" fill="#fff" stroke="#e0d6cd" stroke-width="1.5"/>
+            <rect x="72" y="96" width="20" height="4" rx="2" fill="#00754a"/>
+            <circle cx="82" cy="109" r="4" fill="#00754a"/>
+          </svg>
+        </div>
+      </header>
+
+      <!-- 薪資週期月份切換列 -->
+      <div class="filter-bar">
+        <div class="month-selector">
+          <label for="viewMonth">📅 計薪月份：</label>
+          <input type="month" id="viewMonth">
+        </div>
+        <div class="period-cycle-tag" id="periodCycleHint">
+          週期：-- ~ --
+        </div>
+      </div>
+
+      <!-- 工時 HUD 卡片 (精準顯示週期與本週明細) -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">☕ 當期累計工時 (Pay Period)</div>
+          <div class="kpi-num" id="selectedMonthHours">0.0 <small>HRS</small></div>
+          <div class="holiday-stat" id="selectedMonthPayHours">雙倍計薪換算: 0.0 hrs</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">✨ 本週實計工時 (週一至週日)</div>
+          <div class="kpi-num" id="weekHours">0.0 <small>HRS</small></div>
+          <div style="font-size: 0.75rem; color: var(--sbux-muted); margin-top:4px;" id="weekRangeHint">Mon - Sun</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">🏅 歷史總時數 (All-Time Career)</div>
+          <div class="kpi-num" id="allTimeHours">0.0 <small>HRS</small></div>
+          <div style="font-size: 0.75rem; color: var(--sbux-muted); margin-top:4px;">Runy 的咖啡師歷程</div>
+        </div>
+      </div>
+
+      <!-- 登錄與編輯表單 -->
+      <div class="input-panel" id="inputPanel">
+        <div class="panel-title-row">
+          <div class="panel-title">
+            <span id="formTitleIcon">✏️</span>
+            <span id="formTitleText">登記新班次 (Add New Shift)</span>
+          </div>
+          <div class="edit-indicator" id="editIndicator">正在修改班次...</div>
+        </div>
+
+        <form id="dutyForm" class="form-grid">
+          <input type="hidden" id="editingId" value="">
+
+          <div class="form-item">
+            <label for="dutyDate">日期 (DATE)</label>
+            <input type="date" id="dutyDate" required onchange="checkHolidayAuto(this.value)">
+          </div>
+
+          <div class="form-item">
+            <label for="dutyPositionSelect">職位 (POSITION)</label>
+            <select id="dutyPositionSelect" required>
+              <option value="PT">PT (兼職夥伴)</option>
+              <option value="PTSSV">PTSSV (兼職值班經理)</option>
+              <option value="SSV">SSV (值班經理)</option>
+              <option value="ASM">ASM (副店經理)</option>
+              <option value="SM">SM (店經理)</option>
+            </select>
+          </div>
+
+          <div class="form-item">
+            <label for="startTimeSelect">上班時間 (CHECK-IN)</label>
+            <select id="startTimeSelect" required></select>
+          </div>
+
+          <div class="form-item">
+            <label for="endTimeSelect">下班時間 (CHECK-OUT)</label>
+            <select id="endTimeSelect" required></select>
+          </div>
+
+          <div class="form-item">
+            <label for="breakHours">休息時數 (HRS)</label>
+            <input type="number" id="breakHours" min="0" max="4" step="0.5" value="0.5">
+          </div>
+
+          <div class="holiday-checkbox-box" title="國定假日出勤依法發給雙倍薪資">
+            <input type="checkbox" id="isHoliday">
+            <label for="isHoliday">🧧 國定雙倍薪</label>
+          </div>
+
+          <div class="form-item">
+            <label for="dutyStore">門市 (STORE)</label>
+            <input type="text" id="dutyStore" placeholder="如: 崑山門市、南紡門市">
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-submit" id="btnSubmit">＋ 新增班次</button>
+            <button type="button" class="btn-cancel-edit" id="btnCancelEdit" onclick="cancelEditing()">取消</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 1. 清單模式面板 -->
+      <div class="roster-sheet" id="listViewPanel">
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>日期 (DATE)</th>
+                <th>職位 (POSITION)</th>
+                <th>時間區間 (TIME)</th>
+                <th>休息</th>
+                <th>淨工時 (BLOCK)</th>
+                <th>計薪時數 (PAY)</th>
+                <th>門市 (STORE)</th>
+                <th style="text-align: right;">操作</th>
+              </tr>
+            </thead>
+            <tbody id="rosterListBody">
+              <!-- 動態插入 -->
+            </tbody>
+          </table>
+        </div>
+        <div id="emptyNotice" class="empty-state" style="display: none;">
+          🐾 該薪資週期內還沒有排班紀錄喔！在上方填寫來登記吧～
+        </div>
+      </div>
+
+      <!-- 2. 日曆月曆模式面板 -->
+      <div class="calendar-container" id="calendarViewPanel">
+        <div class="calendar-weekdays">
+          <div style="color: var(--holiday-red);">週日 (SUN)</div>
+          <div>週一 (MON)</div>
+          <div>週二 (TUE)</div>
+          <div>週三 (WED)</div>
+          <div>週四 (THU)</div>
+          <div>週五 (FRI)</div>
+          <div style="color: var(--sbux-green);">週六 (SAT)</div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid">
+          <!-- 動態渲染月曆 -->
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 防呆確認彈窗 -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+      <div class="modal-icon" id="modalIcon">⚠️</div>
+      <div class="modal-title" id="modalTitle">請確認班次資料</div>
+      <div class="modal-msg" id="modalMsg">詳細資訊將顯示在此處...</div>
+      <div class="modal-btns">
+        <button class="btn-modal btn-modal-cancel" onclick="closeModal()">返回檢查</button>
+        <button class="btn-modal btn-modal-confirm" id="modalConfirmBtn">確認無誤</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 兼顧舊版資料鍵值相容性
+    const STORAGE_KEY = 'starbucks_runy_roster_data_v6';
+    
+    function loadSavedRoster() {
+      try {
+        let raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          raw = localStorage.getItem('starbucks_runy_roster_data_v5') || 
+                localStorage.getItem('starbucks_bearista_roster_v4') ||
+                localStorage.getItem('starbucks_bearista_roster_v3') ||
+                localStorage.getItem('starbucks_bearista_roster_v2');
+        }
+        return raw ? JSON.parse(raw) : [];
+      } catch (err) {
+        console.warn('LocalStorage 讀取異常：', err);
+        return [];
+      }
+    }
+
+    function saveRosterData(data) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch (err) {
+        console.error('LocalStorage 寫入失敗：', err);
+      }
+    }
+
+    let rosterList = loadSavedRoster();
+    let currentView = 'list';
+
+    // 台灣國定假日資料庫
+    const TAIWAN_HOLIDAYS = {
+      "01-01": "元旦",
+      "02-28": "和平紀念日",
+      "04-04": "兒童節",
+      "04-05": "清明節",
+      "05-01": "勞動節",
+      "10-10": "國慶日",
+      "2026-02-16": "除夕",
+      "2026-02-17": "春節初一",
+      "2026-02-18": "春節初二",
+      "2026-02-19": "春節初三",
+      "2026-06-19": "端午節",
+      "2026-09-25": "中秋節",
+      "2027-02-05": "除夕",
+      "2027-02-06": "春節初一",
+      "2027-02-07": "春節初二",
+      "2027-02-08": "春節初三",
+      "2027-06-09": "端午節",
+      "2027-09-15": "中秋節",
+      "2025-01-28": "除夕",
+      "2025-01-29": "春節初一",
+      "2025-01-30": "春節初二",
+      "2025-01-31": "春節初三",
+      "2025-05-31": "端午節",
+      "2025-10-06": "中秋節"
+    };
+
+    function getHolidayName(dateStr) {
+      if (!dateStr) return null;
+      const mmdd = dateStr.substring(5);
+      return TAIWAN_HOLIDAYS[dateStr] || TAIWAN_HOLIDAYS[mmdd] || null;
+    }
+
+    const viewMonthInput = document.getElementById('viewMonth');
+    const dutyDateInput = document.getElementById('dutyDate');
+    const dutyForm = document.getElementById('dutyForm');
+    const dutyPositionSelect = document.getElementById('dutyPositionSelect');
+    const startTimeSelect = document.getElementById('startTimeSelect');
+    const endTimeSelect = document.getElementById('endTimeSelect');
+    const dutyStoreInput = document.getElementById('dutyStore');
+
+    const rosterListBody = document.getElementById('rosterListBody');
+    const emptyNotice = document.getElementById('emptyNotice');
+    const inputPanel = document.getElementById('inputPanel');
+    const editingIdInput = document.getElementById('editingId');
+    const formTitleText = document.getElementById('formTitleText');
+    const formTitleIcon = document.getElementById('formTitleIcon');
+    const editIndicator = document.getElementById('editIndicator');
+    const btnSubmit = document.getElementById('btnSubmit');
+    const btnCancelEdit = document.getElementById('btnCancelEdit');
+    const isHolidayCheckbox = document.getElementById('isHoliday');
+
+    const listViewPanel = document.getElementById('listViewPanel');
+    const calendarViewPanel = document.getElementById('calendarViewPanel');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const tabList = document.getElementById('tabList');
+    const tabCalendar = document.getElementById('tabCalendar');
+
+    const selectedMonthHoursEl = document.getElementById('selectedMonthHours');
+    const selectedMonthPayHoursEl = document.getElementById('selectedMonthPayHours');
+    const weekHoursEl = document.getElementById('weekHours');
+    const weekRangeHintEl = document.getElementById('weekRangeHint');
+    const allTimeHoursEl = document.getElementById('allTimeHours');
+    const periodCycleHintEl = document.getElementById('periodCycleHint');
+
+    const confirmModal = document.getElementById('confirmModal');
+    const modalIcon = document.getElementById('modalIcon');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMsg = document.getElementById('modalMsg');
+    const modalConfirmBtn = document.getElementById('modalConfirmBtn');
+    let modalActionCallback = null;
+
+    // 格式化本地日期為 YYYY-MM-DD (避免 toISOString 時區偏差)
+    function formatLocalDate(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // 動態填入時間下拉選單 (整點 & 半點)
+    function populateTimeDropdowns() {
+      const times = [];
+      for (let h = 0; h < 24; h++) {
+        const hh = String(h).padStart(2, '0');
+        times.push(`${hh}:00`);
+        times.push(`${hh}:30`);
+      }
+
+      startTimeSelect.innerHTML = '';
+      endTimeSelect.innerHTML = '';
+
+      times.forEach(t => {
+        const optStart = document.createElement('option');
+        optStart.value = t;
+        optStart.textContent = t;
+        startTimeSelect.appendChild(optStart);
+
+        const optEnd = document.createElement('option');
+        optEnd.value = t;
+        optEnd.textContent = t;
+        endTimeSelect.appendChild(optEnd);
+      });
+
+      startTimeSelect.value = '10:00';
+      endTimeSelect.value = '18:00';
+    }
+    populateTimeDropdowns();
+
+    // 星巴克計薪週期：上月21 ~ 當月20
+    function getSbuxPayPeriodRange(yearMonthStr) {
+      const [year, month] = yearMonthStr.split('-').map(Number);
+      
+      const prevDate = new Date(year, month - 2, 1);
+      const prevYear = prevDate.getFullYear();
+      const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
+
+      const currentYear = year;
+      const currentMonth = String(month).padStart(2, '0');
+
+      const startDate = `${prevYear}-${prevMonth}-21`;
+      const endDate = `${currentYear}-${currentMonth}-20`;
+
+      return { startDate, endDate };
+    }
+
+    function getDefaultSbuxMonth() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const day = now.getDate();
+
+      if (day > 20) {
+        const nextMonthDate = new Date(year, month, 1);
+        return `${nextMonthDate.getFullYear()}-${String(nextMonthDate.getMonth() + 1).padStart(2, '0')}`;
+      } else {
+        return `${year}-${String(month).padStart(2, '0')}`;
+      }
+    }
+
+    viewMonthInput.value = getDefaultSbuxMonth();
+    dutyDateInput.value = formatLocalDate(new Date());
+
+    function checkHolidayAuto(dateStr) {
+      const holidayName = getHolidayName(dateStr);
+      isHolidayCheckbox.checked = Boolean(holidayName);
+    }
+    checkHolidayAuto(dutyDateInput.value);
+
+    function switchView(view) {
+      currentView = view;
+      if (view === 'list') {
+        tabList.classList.add('active');
+        tabCalendar.classList.remove('active');
+        inputPanel.style.display = 'block';
+        listViewPanel.style.display = 'block';
+        calendarViewPanel.style.display = 'none';
+      } else {
+        tabList.classList.remove('active');
+        tabCalendar.classList.add('active');
+        inputPanel.style.display = 'none';
+        listViewPanel.style.display = 'none';
+        calendarViewPanel.style.display = 'block';
+        renderCalendar();
+      }
+    }
+
+    function calculateNetHours(start, end, breakHrs) {
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      let sMin = sh * 60 + sm;
+      let eMin = eh * 60 + em;
+
+      if (eMin < sMin) eMin += 24 * 60; // 跨夜
+      const duration = (eMin - sMin) / 60;
+      return Math.max(0, parseFloat((duration - parseFloat(breakHrs || 0)).toFixed(1)));
+    }
+
+    // ★★★ 核心重寫：精準計算「本週（週一 00:00 至 週日 23:59）」★★★
+    function getThisWeekMondayToSundayRange() {
+      const now = new Date();
+      const day = now.getDay(); // 0 是週日, 1 是週一, ..., 6 是週六
+      
+      // 週一到週日的偏移量：若今天是週日(0)，週一是 6 天前；若今天是週一(1)，週一是 0 天前
+      const distanceToMonday = (day === 0 ? -6 : 1 - day);
+
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + distanceToMonday);
+      const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+
+      const monStr = formatLocalDate(monday);
+      const sunStr = formatLocalDate(sunday);
+
+      return { monStr, sunStr };
+    }
+
+    function openModal({ icon, title, messageHtml, isDanger, onConfirm }) {
+      modalIcon.innerText = icon;
+      modalTitle.innerText = title;
+      modalMsg.innerHTML = messageHtml;
+      
+      if (isDanger) {
+        modalConfirmBtn.classList.add('danger');
+        modalConfirmBtn.innerText = '確認刪除';
+      } else {
+        modalConfirmBtn.classList.remove('danger');
+        modalConfirmBtn.innerText = '確認存檔';
+      }
+
+      modalActionCallback = onConfirm;
+      confirmModal.style.display = 'flex';
+    }
+
+    function closeModal() {
+      confirmModal.style.display = 'none';
+      modalActionCallback = null;
+    }
+
+    modalConfirmBtn.addEventListener('click', () => {
+      if (modalActionCallback) modalActionCallback();
+      closeModal();
+    });
+
+    function renderCalendar() {
+      calendarGrid.innerHTML = '';
+      const [year, month] = viewMonthInput.value.split('-').map(Number);
+      
+      const firstDayOfMonth = new Date(year, month - 1, 1).getDay();
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      for (let i = 0; i < firstDayOfMonth; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'calendar-cell other-month';
+        calendarGrid.appendChild(emptyCell);
+      }
+
+      const todayStr = formatLocalDate(new Date());
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const holidayName = getHolidayName(dateStr);
+        const cell = document.createElement('div');
+        cell.className = 'calendar-cell';
+        if (dateStr === todayStr) cell.classList.add('is-today');
+        if (holidayName) cell.classList.add('is-holiday-cell');
+
+        const dayDuties = rosterList.filter(d => d.date === dateStr);
+        dayDuties.sort((a, b) => a.start.localeCompare(b.start));
+
+        if (dayDuties.length > 0) cell.classList.add('has-duty');
+
+        let dutyHtml = '';
+        dayDuties.forEach(duty => {
+          const isDouble = duty.isHoliday;
+          const storeName = duty.store || duty.note || '原門市';
+          dutyHtml += `
+            <div class="duty-badge-cal ${isDouble ? 'is-double' : ''}" onclick="startEditingFromCalendar('${duty.id}')" title="點選修改此班次">
+              <span class="pos-text">☕ ${duty.position || 'PT'} ${isDouble ? '🧧雙倍' : ''}</span>
+              <span class="store-text">📍 ${storeName}</span>
+              <span class="time-text">${duty.start}~${duty.end} (${duty.netHours}h${isDouble ? ' ➔ ' + (duty.netHours * 2) + 'h' : ''})</span>
+            </div>
+          `;
+        });
+
+        cell.innerHTML = `
+          <div class="cell-date-row">
+            <span class="cell-date ${holidayName ? 'holiday-text' : ''}">${day}</span>
+            ${holidayName ? `<span class="holiday-name-tag">${holidayName}</span>` : ''}
+          </div>
+          ${dutyHtml}
+        `;
+        calendarGrid.appendChild(cell);
+      }
+    }
+
+    function startEditingFromCalendar(id) {
+      switchView('list');
+      startEditing(id);
+    }
+
+    // ★★★ 渲染清單與工時統計 ★★★
+    function renderRoster() {
+      const selectedMonth = viewMonthInput.value;
+      const { startDate, endDate } = getSbuxPayPeriodRange(selectedMonth);
+
+      periodCycleHintEl.innerHTML = `週期：<strong>${startDate}</strong> ~ <strong>${endDate}</strong>`;
+
+      // 依日期由小到大排序 (01 -> 02 -> 03 ...)
+      rosterList.sort((a, b) => {
+        if (a.date !== b.date) {
+          return a.date.localeCompare(b.date);
+        }
+        return a.start.localeCompare(b.start);
+      });
+
+      rosterListBody.innerHTML = '';
+
+      let monthNetTotal = 0;
+      let monthPayTotal = 0;
+      let weekTotal = 0;
+      let allTotal = 0;
+      let visibleCount = 0;
+
+      // ★ 取得精確本地週一至週日區間 (如: 2026-09-14 到 2026-09-20)
+      const { monStr, sunStr } = getThisWeekMondayToSundayRange();
+      weekRangeHintEl.innerText = `${monStr.substring(5)} (一) ~ ${sunStr.substring(5)} (日)`;
+
+      rosterList.forEach((duty) => {
+        allTotal += duty.netHours;
+
+        // ★★★ 精準字串比對：只要日期落在 monStr 與 sunStr 之間即納入本週工時 ★★★
+        if (duty.date >= monStr && duty.date <= sunStr) {
+          weekTotal += duty.netHours;
+        }
+
+        // 星巴克計薪區間判斷 (startDate ~ endDate)
+        if (duty.date >= startDate && duty.date <= endDate) {
+          visibleCount++;
+          monthNetTotal += duty.netHours;
+          const payHours = duty.isHoliday ? duty.netHours * 2 : duty.netHours;
+          monthPayTotal += payHours;
+
+          const positionDisplay = duty.position || 'PT';
+          const holidayTag = duty.isHoliday ? `<span class="badge-holiday">🧧 國定雙倍</span>` : '';
+          const storeDisplay = duty.store || duty.note || '-';
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>
+              <strong>${duty.date}</strong>
+              ${holidayTag}
+            </td>
+            <td><span class="badge-position">☕ ${positionDisplay}</span></td>
+            <td>${duty.start} - ${duty.end}</td>
+            <td>${duty.breakTime} hr</td>
+            <td style="font-weight: 700;">${duty.netHours.toFixed(1)} hrs</td>
+            <td style="font-weight: 800; color: ${duty.isHoliday ? 'var(--holiday-red)' : 'var(--sbux-green)'};">
+              ${payHours.toFixed(1)} hrs
+            </td>
+            <td class="store-tag">📍 ${storeDisplay}</td>
+            <td class="actions-cell">
+              <button class="btn-edit" onclick="startEditing('${duty.id}')" title="修改班次">✏️ 修改</button>
+              <button class="btn-del" onclick="confirmDeleteDuty('${duty.id}')" title="刪除班次">✕</button>
+            </td>
+          `;
+          rosterListBody.appendChild(tr);
+        }
+      });
+
+      emptyNotice.style.display = visibleCount === 0 ? 'block' : 'none';
+
+      selectedMonthHoursEl.innerHTML = `${monthNetTotal.toFixed(1)} <small>HRS</small>`;
+      selectedMonthPayHoursEl.innerHTML = `雙倍換算計薪: <strong>${monthPayTotal.toFixed(1)}</strong> hrs`;
+      weekHoursEl.innerHTML = `${weekTotal.toFixed(1)} <small>HRS</small>`;
+      allTimeHoursEl.innerHTML = `${allTotal.toFixed(1)} <small>HRS</small>`;
+
+      saveRosterData(rosterList);
+
+      if (currentView === 'calendar') {
+        renderCalendar();
+      }
+    }
+
+    viewMonthInput.addEventListener('change', () => {
+      renderRoster();
+      if (currentView === 'calendar') renderCalendar();
+    });
+
+    function startEditing(id) {
+      const item = rosterList.find(d => d.id === id);
+      if (!item) return;
+
+      editingIdInput.value = item.id;
+      dutyDateInput.value = item.date;
+      
+      const pos = item.position || 'PT';
+      dutyPositionSelect.value = ['PT', 'PTSSV', 'SSV', 'ASM', 'SM'].includes(pos) ? pos : 'PT';
+
+      startTimeSelect.value = item.start || '10:00';
+      endTimeSelect.value = item.end || '18:00';
+      document.getElementById('breakHours').value = item.breakTime;
+      dutyStoreInput.value = item.store || item.note || '';
+      isHolidayCheckbox.checked = Boolean(item.isHoliday);
+
+      inputPanel.classList.add('editing-mode');
+      formTitleIcon.innerText = '🛠️';
+      formTitleText.innerText = '修改班次紀錄 (Edit Shift)';
+      editIndicator.style.display = 'block';
+      btnSubmit.innerText = '💾 儲存修改';
+      btnCancelEdit.style.display = 'inline-block';
+
+      inputPanel.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelEditing() {
+      editingIdInput.value = '';
+      dutyForm.reset();
+      dutyDateInput.value = formatLocalDate(new Date());
+      dutyPositionSelect.value = 'PT';
+      startTimeSelect.value = '10:00';
+      endTimeSelect.value = '18:00';
+      document.getElementById('breakHours').value = '0.5';
+      checkHolidayAuto(dutyDateInput.value);
+
+      inputPanel.classList.remove('editing-mode');
+      formTitleIcon.innerText = '✏️';
+      formTitleText.innerText = '登記新班次 (Add New Shift)';
+      editIndicator.style.display = 'none';
+      btnSubmit.innerText = '＋ 新增班次';
+      btnCancelEdit.style.display = 'none';
+    }
+
+    dutyForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const isEditing = Boolean(editingIdInput.value);
+      const date = dutyDateInput.value;
+      const position = dutyPositionSelect.value;
+      const start = startTimeSelect.value;
+      const end = endTimeSelect.value;
+      const breakTime = parseFloat(document.getElementById('breakHours').value) || 0;
+      const store = dutyStoreInput.value.trim() || '原門市';
+      const isHoliday = isHolidayCheckbox.checked;
+
+      const netHours = calculateNetHours(start, end, breakTime);
+      const payHours = isHoliday ? netHours * 2 : netHours;
+
+      let warningHtml = "";
+      if (netHours <= 0) {
+        warningHtml = "<div style='color: #ef4444; font-weight: bold; margin-top: 4px;'>⚠️ 提醒：計算後的淨工時為 0 小時，請確認時間與休息是否正確！</div>";
+      } else if (netHours > 10) {
+        warningHtml = "<div style='color: #f59e0b; font-weight: bold; margin-top: 4px;'>⚠️ 提醒：單班工時超過 10 小時，請確認是否有輸入錯誤！</div>";
+      }
+
+      const holidayHtml = isHoliday ? `<div style="color: var(--holiday-red); font-weight: 800;">🧧 本班次適用「國定假日雙倍薪資」換算！</div>` : '';
+
+      const confirmHtml = `
+        <div><strong>👤 執勤夥伴：</strong>Runy</div>
+        <div><strong>📅 日期：</strong>${date} ${holidayHtml}</div>
+        <div><strong>☕ 職位：</strong>${position}</div>
+        <div><strong>📍 門市：</strong>${store}</div>
+        <div><strong>⏰ 時間：</strong>${start} ~ ${end} (扣除休息 ${breakTime} 小時)</div>
+        <div style="font-size: 1rem; margin-top: 6px; color: var(--sbux-green); font-weight: 800;">
+          👉 實計淨工時：${netHours.toFixed(1)} hrs ${isHoliday ? `<span style="color: var(--holiday-red);">(計薪工時: ${payHours.toFixed(1)} hrs)</span>` : ''}
+        </div>
+        ${warningHtml}
+      `;
+
+      openModal({
+        icon: isEditing ? '🛠️' : '📋',
+        title: isEditing ? '確認儲存此修改？' : '確認登錄此排班？',
+        messageHtml: confirmHtml,
+        isDanger: false,
+        onConfirm: () => {
+          if (isEditing) {
+            const targetIndex = rosterList.findIndex(d => d.id === editingIdInput.value);
+            if (targetIndex !== -1) {
+              rosterList[targetIndex] = {
+                ...rosterList[targetIndex],
+                date,
+                position,
+                start,
+                end,
+                breakTime,
+                netHours,
+                isHoliday,
+                store
+              };
+            }
+            cancelEditing();
+          } else {
+            const newEntry = {
+              id: Date.now().toString(),
+              date,
+              position,
+              start,
+              end,
+              breakTime,
+              netHours,
+              isHoliday,
+              store
+            };
+            rosterList.push(newEntry);
+            dutyForm.reset();
+            dutyDateInput.value = date;
+            dutyPositionSelect.value = 'PT';
+            startTimeSelect.value = '10:00';
+            endTimeSelect.value = '18:00';
+            document.getElementById('breakHours').value = '0.5';
+            checkHolidayAuto(date);
+          }
+
+          const day = parseInt(date.substring(8, 10), 10);
+          const [y, m] = date.substring(0, 7).split('-').map(Number);
+          if (day > 20) {
+            const nextM = new Date(y, m, 1);
+            viewMonthInput.value = `${nextM.getFullYear()}-${String(nextM.getMonth() + 1).padStart(2, '0')}`;
+          } else {
+            viewMonthInput.value = date.substring(0, 7);
+          }
+
+          renderRoster();
+        }
+      });
+    });
+
+    function confirmDeleteDuty(id) {
+      const item = rosterList.find(d => d.id === id);
+      if (!item) return;
+
+      const deleteHtml = `
+        <div>確定要刪除這筆班表紀錄嗎？</div>
+        <div style="margin-top: 6px; font-weight: bold; color: #2d2926;">
+          ${item.date} [${item.position || 'PT'}] 📍 ${item.store || item.note || '原門市'} (${item.start} - ${item.end})
+        </div>
+        <div style="color: #ef4444; font-size: 0.8rem; margin-top: 4px;">⚠️ 此操作將無法復原。</div>
+      `;
+
+      openModal({
+        icon: '🗑️',
+        title: '刪除防呆確認',
+        messageHtml: deleteHtml,
+        isDanger: true,
+        onConfirm: () => {
+          rosterList = rosterList.filter(d => d.id !== id);
+          if (editingIdInput.value === id) {
+            cancelEditing();
+          }
+          renderRoster();
+        }
+      });
+    }
+
+    function exportData() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(rosterList, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `barista_roster_backup_${formatLocalDate(new Date())}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importData(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            rosterList = imported;
+            renderRoster();
+            alert('🎉 班表紀錄已成功還原！');
+          } else {
+            alert('檔案格式不符。');
+          }
+        } catch (err) {
+          alert('解析檔案失敗，請確認檔案格式是否正確。');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // 初次載入渲染
+    renderRoster();
+  </script>
+</body>
+</html>
