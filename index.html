@@ -929,7 +929,7 @@
 
     <div class="sidebar-bottom">
       <div class="auto-save-hint">
-        <span>●</span> 自動儲存已啟用
+        <span>●</span> 本機記憶保存中
       </div>
       <button class="side-tool-btn" onclick="exportData()">📥 下載備份 (JSON)</button>
       <button class="side-tool-btn" onclick="document.getElementById('importFile').click()">📤 還原紀錄</button>
@@ -993,7 +993,7 @@
         </div>
       </div>
 
-      <!-- 工時 HUD 卡片 (精準顯示週期與本週明細) -->
+      <!-- 工時 HUD 卡片 -->
       <div class="kpi-grid">
         <div class="kpi-card">
           <div class="kpi-label">☕ 當期累計工時 (Pay Period)</div>
@@ -1132,30 +1132,33 @@
   </div>
 
   <script>
-    // 兼顧舊版資料鍵值相容性
-    const STORAGE_KEY = 'starbucks_runy_roster_data_v6';
-    
+    // 單一設備永久儲存 Key
+    const STORAGE_KEY = 'starbucks_runy_roster_data_v8';
+
     function loadSavedRoster() {
       try {
-        let raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) {
-          raw = localStorage.getItem('starbucks_runy_roster_data_v5') || 
-                localStorage.getItem('starbucks_bearista_roster_v4') ||
-                localStorage.getItem('starbucks_bearista_roster_v3') ||
-                localStorage.getItem('starbucks_bearista_roster_v2');
+        const keys = [
+          'starbucks_runy_roster_data_v8',
+          'starbucks_runy_roster_data_v7',
+          'starbucks_runy_roster_data_v6',
+          'starbucks_runy_roster_data_v5',
+          'starbucks_bearista_roster_v4'
+        ];
+        for (const k of keys) {
+          const raw = localStorage.getItem(k);
+          if (raw) return JSON.parse(raw);
         }
-        return raw ? JSON.parse(raw) : [];
       } catch (err) {
-        console.warn('LocalStorage 讀取異常：', err);
-        return [];
+        console.warn('讀取本地資料失敗：', err);
       }
+      return [];
     }
 
     function saveRosterData(data) {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       } catch (err) {
-        console.error('LocalStorage 寫入失敗：', err);
+        console.error('寫入本地資料失敗：', err);
       }
     }
 
@@ -1181,13 +1184,7 @@
       "2027-02-07": "春節初二",
       "2027-02-08": "春節初三",
       "2027-06-09": "端午節",
-      "2027-09-15": "中秋節",
-      "2025-01-28": "除夕",
-      "2025-01-29": "春節初一",
-      "2025-01-30": "春節初二",
-      "2025-01-31": "春節初三",
-      "2025-05-31": "端午節",
-      "2025-10-06": "中秋節"
+      "2027-09-15": "中秋節"
     };
 
     function getHolidayName(dateStr) {
@@ -1235,7 +1232,6 @@
     const modalConfirmBtn = document.getElementById('modalConfirmBtn');
     let modalActionCallback = null;
 
-    // 格式化本地日期為 YYYY-MM-DD (避免 toISOString 時區偏差)
     function formatLocalDate(d) {
       const year = d.getFullYear();
       const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -1243,7 +1239,6 @@
       return `${year}-${month}-${day}`;
     }
 
-    // 動態填入時間下拉選單 (整點 & 半點)
     function populateTimeDropdowns() {
       const times = [];
       for (let h = 0; h < 24; h++) {
@@ -1272,10 +1267,8 @@
     }
     populateTimeDropdowns();
 
-    // 星巴克計薪週期：上月21 ~ 當月20
     function getSbuxPayPeriodRange(yearMonthStr) {
       const [year, month] = yearMonthStr.split('-').map(Number);
-      
       const prevDate = new Date(year, month - 2, 1);
       const prevYear = prevDate.getFullYear();
       const prevMonth = String(prevDate.getMonth() + 1).padStart(2, '0');
@@ -1283,10 +1276,10 @@
       const currentYear = year;
       const currentMonth = String(month).padStart(2, '0');
 
-      const startDate = `${prevYear}-${prevMonth}-21`;
-      const endDate = `${currentYear}-${currentMonth}-20`;
-
-      return { startDate, endDate };
+      return {
+        startDate: `${prevYear}-${prevMonth}-21`,
+        endDate: `${currentYear}-${currentMonth}-20`
+      };
     }
 
     function getDefaultSbuxMonth() {
@@ -1336,26 +1329,24 @@
       let sMin = sh * 60 + sm;
       let eMin = eh * 60 + em;
 
-      if (eMin < sMin) eMin += 24 * 60; // 跨夜
+      if (eMin < sMin) eMin += 24 * 60;
       const duration = (eMin - sMin) / 60;
       return Math.max(0, parseFloat((duration - parseFloat(breakHrs || 0)).toFixed(1)));
     }
 
-    // ★★★ 核心重寫：精準計算「本週（週一 00:00 至 週日 23:59）」★★★
+    // ★ 本週（週一至週日）純本地時間算法
     function getThisWeekMondayToSundayRange() {
       const now = new Date();
-      const day = now.getDay(); // 0 是週日, 1 是週一, ..., 6 是週六
-      
-      // 週一到週日的偏移量：若今天是週日(0)，週一是 6 天前；若今天是週一(1)，週一是 0 天前
+      const day = now.getDay();
       const distanceToMonday = (day === 0 ? -6 : 1 - day);
 
       const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + distanceToMonday);
       const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
 
-      const monStr = formatLocalDate(monday);
-      const sunStr = formatLocalDate(sunday);
-
-      return { monStr, sunStr };
+      return {
+        monStr: formatLocalDate(monday),
+        sunStr: formatLocalDate(sunday)
+      };
     }
 
     function openModal({ icon, title, messageHtml, isDanger, onConfirm }) {
@@ -1442,18 +1433,14 @@
       startEditing(id);
     }
 
-    // ★★★ 渲染清單與工時統計 ★★★
     function renderRoster() {
       const selectedMonth = viewMonthInput.value;
       const { startDate, endDate } = getSbuxPayPeriodRange(selectedMonth);
 
       periodCycleHintEl.innerHTML = `週期：<strong>${startDate}</strong> ~ <strong>${endDate}</strong>`;
 
-      // 依日期由小到大排序 (01 -> 02 -> 03 ...)
       rosterList.sort((a, b) => {
-        if (a.date !== b.date) {
-          return a.date.localeCompare(b.date);
-        }
+        if (a.date !== b.date) return a.date.localeCompare(b.date);
         return a.start.localeCompare(b.start);
       });
 
@@ -1465,19 +1452,18 @@
       let allTotal = 0;
       let visibleCount = 0;
 
-      // ★ 取得精確本地週一至週日區間 (如: 2026-09-14 到 2026-09-20)
       const { monStr, sunStr } = getThisWeekMondayToSundayRange();
       weekRangeHintEl.innerText = `${monStr.substring(5)} (一) ~ ${sunStr.substring(5)} (日)`;
 
       rosterList.forEach((duty) => {
         allTotal += duty.netHours;
 
-        // ★★★ 精準字串比對：只要日期落在 monStr 與 sunStr 之間即納入本週工時 ★★★
+        // 本週工時判定（週一至週日）
         if (duty.date >= monStr && duty.date <= sunStr) {
           weekTotal += duty.netHours;
         }
 
-        // 星巴克計薪區間判斷 (startDate ~ endDate)
+        // 星巴克薪資週期判定（上月21 ~ 當月20）
         if (duty.date >= startDate && duty.date <= endDate) {
           visibleCount++;
           monthNetTotal += duty.netHours;
@@ -1686,9 +1672,7 @@
         isDanger: true,
         onConfirm: () => {
           rosterList = rosterList.filter(d => d.id !== id);
-          if (editingIdInput.value === id) {
-            cancelEditing();
-          }
+          if (editingIdInput.value === id) cancelEditing();
           renderRoster();
         }
       });
